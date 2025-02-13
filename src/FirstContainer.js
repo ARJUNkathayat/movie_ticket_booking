@@ -1,46 +1,27 @@
 import React, { useEffect } from "react";
-import { API_OPTIONs} from "./utils/constants";
-import { db } from "./utils/firebase"; 
-import { collection, addDoc,  getDocs } from "firebase/firestore";
+import { API_OPTIONs } from "./utils/constants";
 
 const FirstContainer = () => {
   const getTitleMovie = async () => {
     try {
-      // ✅ Fetch TMDB API data
+      // ✅ TMDB API se data fetch karo
       const response = await fetch(
         "https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1",
-        API_OPTIONs // No need for mode: "cors"
+        API_OPTIONs
       );
       const json = await response.json();
       console.log("Fetched Data:", json.results);
 
-      // ✅ Reference Firestore collection
-      const moviesRef = collection(db, "movies");
-
-      // ✅ Fetch existing movie IDs to prevent duplicates
-      const existingMoviesSnapshot = await getDocs(moviesRef);
-      const existingMovieIds = existingMoviesSnapshot.docs.map(doc => doc.data().id);
-
-      // ✅ Filter new movies that are not already in Firestore
-      const newMovies = json.results.filter(movie => !existingMovieIds.includes(movie.id));
-
-      // ✅ Store movies in Firestore
-      const promises = newMovies.map(async (movie) => {
-        await addDoc(moviesRef, {
-          id: movie.id,
-          title: movie.title,
-          overview: movie.overview,
-          poster_path: movie.poster_path,
-          release_date: movie.release_date,
-          vote_average: movie.vote_average,
-          timestamp: new Date(),
-        });
+      // ✅ Backend API ko data bhejo (MongoDB me save karne ke liye)
+      const backendResponse = await fetch("http://localhost:5000/movies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ movies: json.results }),
       });
 
-      // ✅ Wait for all writes to finish
-      await Promise.all(promises);
+      const result = await backendResponse.json();
+      console.log("Backend Response:", result);
 
-      console.log("New movies added to Firebase successfully!");
     } catch (error) {
       console.error("Error fetching or saving movie data:", error);
     }
