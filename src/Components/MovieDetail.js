@@ -1,0 +1,2 @@
+const movie_details="https://api_new.cinepolisindia.com/api/movies/movie-details-new-test/HO00016733/?movie_id=HO00016733&city_id=9&isVip=N"
+const movie_tickey="https://api_new.cinepolisindia.com/api/movies/show-times/${movieId}/?request_type=get-show-times&show_date=2025-02-15&movie_id=${movieId}&city_id=9&experience=&isVip=N"

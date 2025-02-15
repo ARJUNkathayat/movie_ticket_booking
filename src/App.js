@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
-import Header from "./Components/Header";
-import FirstContainer from "./FirstContainer";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import MainPage from "./Components/MainPage";
+import BookingPage from "./Components/BookingPage";
+
 
 function App() {
   async function getData() {
@@ -14,10 +16,12 @@ function App() {
   }, []);
 
   return (
-    <div className="">
-      <Header />
-      <FirstContainer />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainPage/>} />
+        <Route path="/book-ticket/:movieId" element={<BookingPage />} />
+      </Routes>
+    </Router>
   );
 }
 

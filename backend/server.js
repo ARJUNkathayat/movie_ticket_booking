@@ -10,73 +10,119 @@ app.use(cors());
 // ✅ MongoDB Connection
 mongoose
   .connect(
-    "mongodb+srv://ArjunKathayat:khemradha@cluster0.zuui8.mongodb.net/moviesDB?retryWrites=true&w=majority&appName=Cluster0",
+    "mongodb+srv://ArjunKathayat:khemradha@cluster0.zuui8.mongodb.net/moviesDB?retryWrites=true&w=majority",
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Mongoose Schema & Model (Updated for Cinepolis Data)
+// ✅ Mongoose Schema
 const movieSchema = new mongoose.Schema({
-  ID: String, // Unique Movie ID from Cinepolis
+  movie_id: String,
   movie_title: String,
-  movie_lang: String,
-  genre: String,
-  releaseDate: String,
-  moviePosterUrl: String,
-  trailerUrl: String,
-  runTime: Number,
-  isComingSoon: String,
+  movie_language: String,
+  movie_genre: String,
+  release_date: String,
+  movie_poster_url: String,
+  trailer_url: String,
+  run_time: Number,
+  is_coming_soon: Boolean,
 });
 
-const Movie = mongoose.model("Movie", movieSchema);
+const Movie = mongoose.model("CinepolisMovie", movieSchema);
 
-// ✅ API to Fetch Cinepolis Movies
-app.get("/cinepolis-movies", async (req, res) => {
+// ✅ Fetch and Store Movies from Cinepolis API
+app.get("/fetch-cinepolis-movies", async (req, res) => {
   try {
-    const response = await fetch(
-      "https://cinepolisindia.com/api/movies" // ✅ Replace with the actual Cinepolis API endpoint
-    );
+    const { city_id = "9" } = req.query;
+    const apiUrl = `https://api_new.cinepolisindia.com/api/movies/now-playing-filtered/?city_id=${city_id}`;
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: { accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
     const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch data from Cinepolis API" });
-  }
-});
 
-// ✅ API to Store Movies in MongoDB
-app.post("/movies", async (req, res) => {
-  try {
-    const movies = req.body.data; // ✅ Adjusted to match Cinepolis API data structure
+    if (!data || !Array.isArray(data.data) || data.data.length === 0) {
+      console.log("⚠️ API response is empty or format changed!");
+      return res.status(404).json({ error: "No movies found from Cinepolis API" });
+    }
 
-    const savePromises = movies.map(async (movie) => {
+    // Transform Data Before Saving
+    const transformedMovies = data.data.map((movie) => ({
+      movie_id: movie.ID || "N/A",
+      movie_title: movie.Title || "Unknown",
+      movie_language: movie.commmonLangaugesJoined || "English",
+      movie_genre: "N/A", // Not provided in API
+      release_date: "N/A", // Not provided in API
+      movie_poster_url: movie.GraphicUrl || "N/A",
+      trailer_url: "", // Not provided in API
+      run_time: movie.RunTime || 0,
+      is_coming_soon: movie.is_coming_soon === "Y" ? true : false, // ✅ Convert "Y"/"N" to Boolean
+    }));
+
+    // Save Movies in MongoDB
+    const savePromises = transformedMovies.map(async (movie) => {
       await Movie.updateOne(
-        { ID: movie.ID }, // ✅ Use `ID` from Cinepolis API
-        { 
-          $set: {
-            movie_title: movie.movie_title,
-            movie_lang: movie.movie_lang,
-            genre: movie.m_movie_genre_name,
-            releaseDate: movie.movie_release_date,
-            moviePosterUrl: movie.movie_image_url_1,
-            trailerUrl: movie.movie_trailer,
-            runTime: movie.run_time,
-            isComingSoon: movie.is_coming_soon
-          }
-        },
+        { movie_id: movie.movie_id },
+        { $set: movie },
         { upsert: true }
       );
     });
 
     await Promise.all(savePromises);
-    res.json({ message: "✅ Movies saved successfully!" });
+    res.json({ message: "✅ Movies fetched and stored successfully!" });
 
   } catch (error) {
+    console.error("❌ Error fetching and saving movies:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ✅ API to Get Stored Movies
+// ✅ Save Movies Manually
+app.post("/save-cinepolis-movies", async (req, res) => {
+  try {
+    const movies = req.body.movies;
+
+    if (!movies || movies.length === 0) {
+      return res.status(400).json({ error: "No movies found in request body" });
+    }
+
+    const cleanMovie = (movie) => ({
+      movie_id: movie.ID || "N/A",
+      movie_title: movie.Title || "Unknown",
+      movie_language: movie.commmonLangaugesJoined || "English",
+      movie_genre: "N/A",
+      release_date: "N/A",
+      movie_poster_url: movie.GraphicUrl || "N/A",
+      trailer_url: "",
+      run_time: movie.RunTime || 0,
+      is_coming_soon: movie.is_coming_soon === "Y" ? true : false,
+    });
+
+    const savePromises = movies.map(async (movie) => {
+      await Movie.updateOne(
+        { movie_id: movie.ID },
+        { $set: cleanMovie(movie) },
+        { upsert: true }
+      );
+    });
+
+    await Promise.all(savePromises);
+    res.json({ message: "✅ Movies saved manually!" });
+
+  } catch (error) {
+    console.error("❌ Error saving movies:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ Get Stored Movies
 app.get("/movies", async (req, res) => {
   try {
     const movies = await Movie.find();
