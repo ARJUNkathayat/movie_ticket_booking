@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "./Header";
 
 const BookingPage = () => {
@@ -7,6 +7,12 @@ const BookingPage = () => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10)); 
+  const navigate = useNavigate();
+  const ticketHandle = (sessionId) => {
+    navigate(`/TicketDetail/${movieId}/${sessionId}`);
+  };
+  
 
   // Convert minutes to hours and minutes
   const convertToHoursMinutes = (minutes) => {
@@ -20,7 +26,7 @@ const BookingPage = () => {
   const formatShowTime = (showtime) => {
     if (!showtime) return "N/A";
     const date = new Date(showtime);
-    return date.toLocaleString(); // Adjust formatting as needed
+    return date.toLocaleString();
   };
 
   // Fetch movie details
@@ -40,10 +46,9 @@ const BookingPage = () => {
     }
   };
 
-  // Fetch theater details and showtimes
-  const fetchTheaterDetails = async () => {
-    const todayDate = new Date().toISOString().slice(0, 10);
-    const showtimesApi = `https://api_new.cinepolisindia.com/api/movies/show-times/${movieId}/?request_type=get-show-times&show_date=${todayDate}&movie_id=${movieId}&city_id=9&experience=&isVip=N`;
+  // Fetch showtimes based on selected date
+  const fetchTheaterDetails = async (date) => {
+    const showtimesApi = `https://api_new.cinepolisindia.com/api/movies/show-times/${movieId}/?request_type=get-show-times&show_date=${date}&movie_id=${movieId}&city_id=9&experience=&isVip=N`;
     
     try {
       const data = await fetch(showtimesApi);
@@ -59,9 +64,10 @@ const BookingPage = () => {
     fetchMovieDetails();
   }, [movieId]);
 
+  // Fetch showtimes when selected date changes
   useEffect(() => {
-    fetchTheaterDetails();
-  }, [movieId]);
+    fetchTheaterDetails(selectedDate);
+  }, [movieId, selectedDate]);
 
   if (loading) {
     return <div className="text-white text-center mt-10">Loading...</div>;
@@ -116,30 +122,55 @@ const BookingPage = () => {
         </div>
       </div>
 
-      {/* Ticket Showtimes */}
-      <div className="relative z-10 px-10 pt-10">
-        <h2 className="text-3xl font-semibold text-white mb-6">Showtimes</h2>
-        {tickets.length > 0 ? (
-          tickets.map((ticket, index) => (
-            <div
-              key={ticket?.SessionId || index}
-              className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 mb-6"
-            >
-              <h3 className="text-xl font-semibold">{ticket?.Screens[0]?.ShowTimes[0]?.CinemaName}</h3>
-              <p className="text-gray-300">{ticket?.Screens[0]?.ShowTimes[0]?.cinema_address}</p>
-              <p className="text-gray-300"><strong>Seats Available:</strong> {ticket?.Screens[0]?.ShowTimes[0]?.SeatsAvailable}</p>
-              <p className="text-gray-300"><strong>Showtime:</strong> {formatShowTime(ticket?.Screens[0]?.ShowTimes[0]?.Showtime)}</p>
-              <div className="mt-4">
-                <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full">
-                  Book Now
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-400">No showtimes available for today.</p>
-        )}
+      {/* Date Picker */}
+      <div className="relative z-10 px-10 pt-6">
+        <label className="block text-gray-300 text-lg mb-2">Select Date:</label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="bg-gray-700 text-white px-4 py-2 rounded-md outline-none focus:ring-2 focus:ring-red-500"
+        />
       </div>
+
+      {/* Ticket Showtimes */}
+    {/* Ticket Showtimes */}
+<div className="relative z-10 px-10 pt-10">
+  <h2 className="text-3xl font-semibold text-white mb-6 text-center">🎟️ Available Showtimes</h2>
+
+  {tickets.length > 0 ? (
+    tickets.map((ticket, index) => (
+      <div
+        key={ticket?.SessionId || index}
+        className="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 transition-all duration-300 hover:scale-105"
+      >
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          {/* Cinema Details */}
+          <div className="w-full md:w-2/3">
+            <h3 className="text-2xl font-semibold text-red-500">{ticket?.Screens[0]?.ShowTimes[0]?.CinemaName}</h3>
+            <p className="text-gray-300 mt-1">{ticket?.Screens[0]?.ShowTimes[0]?.cinema_address}</p>
+            <p className="text-gray-400 mt-2"><strong>Seats Available:</strong> {ticket?.Screens[0]?.ShowTimes[0]?.SeatsAvailable}</p>
+            <p className="text-gray-400 mt-1"><strong>Showtime:</strong> {formatShowTime(ticket?.Screens[0]?.ShowTimes[0]?.Showtime)}</p>
+          </div>
+
+          {/* Book Now Button */}
+          <div className="w-full md:w-1/3 flex justify-center mt-4 md:mt-0">
+          <button
+  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full"
+  onClick={() => ticketHandle(ticket?.Screens[0]?.ShowTimes[0]?.SessionId)}
+>
+  Book Now
+</button>
+
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-400 text-center text-lg">No showtimes available for today.</p>
+  )}
+</div>
+
     </div>
   );
 };

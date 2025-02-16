@@ -11,7 +11,7 @@ const MovieCards = ({ mov }) => {
   };
 
   const handleBookTicket = () => {
-    navigate(`/book-ticket/${mov.ID}`); // Pass movieId in the URL
+    navigate(`/book-ticket/${mov.ID}`);
   };
 
   return (

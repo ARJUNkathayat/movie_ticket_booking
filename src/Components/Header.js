@@ -1,6 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
+  const home=()=>{
+    navigate('MainPage')
+  }
   return (
     <div className="bg-black text-white flex justify-between items-center px-8 py-4">
       {/* Logo Section */}
@@ -14,7 +19,7 @@ const Header = () => {
 
       {/* Navigation Links */}
       <div className="flex items-center gap-x-6 text-lg font-medium">
-        <h2 className="cursor-pointer hover:text-gray-400">Home</h2>
+        <h2 onClick={home} className="cursor-pointer hover:text-gray-400">Home</h2>
         <h2 className="cursor-pointer hover:text-gray-400">Movie</h2>
         <h2 className="cursor-pointer hover:text-gray-400">Theatre</h2>
         <h2 className="cursor-pointer hover:text-gray-400">Orders</h2>
