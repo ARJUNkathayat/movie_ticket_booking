@@ -9,6 +9,9 @@ const MovieCards = ({ mov }) => {
     const remainingMinutes = minutes % 60;
     return `${hours} hr ${remainingMinutes} min`;
   };
+  const watchTrailer = ()=>{
+    window.open(mov.movie_trailer, '_blank')
+  }
 
   const handleBookTicket = () => {
     navigate(`/book-ticket/${mov.ID}`);
@@ -27,9 +30,13 @@ const MovieCards = ({ mov }) => {
       <h3 className="text-sm text-gray-400">{convertToHoursMinutes(mov.run_time)}</h3>
 
       <div className="flex mt-4 justify-between space-x-4">
-        <button className="border-2 border-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 ease-in-out hover:shadow-blue-500 hover:shadow-md">
-          🎬 Watch Trailer
-        </button>
+      <button
+  onClick={watchTrailer}
+  className="border-2 border-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 ease-in-out hover:shadow-blue-500 hover:shadow-md"
+>
+  🎬 Watch Trailer
+</button>
+
         <button
           onClick={handleBookTicket}
           className="border-2 border-red-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 ease-in-out hover:shadow-red-500 hover:shadow-md"

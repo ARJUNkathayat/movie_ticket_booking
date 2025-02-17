@@ -9,9 +9,12 @@ const BookingPage = () => {
   const [tickets, setTickets] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10)); 
   const navigate = useNavigate();
-  const ticketHandle = (sessionId) => {
-    navigate(`/TicketDetail/${movieId}/${sessionId}`);
+  const ticketHandle = (sessionId, CinemaId) => {
+    const path = `/TicketDetail/${movieId}/${sessionId}/${CinemaId}`;
+    console.log("Navigating to:", path);
+    navigate(path);
   };
+  
   
 
   // Convert minutes to hours and minutes
@@ -53,6 +56,7 @@ const BookingPage = () => {
     try {
       const data = await fetch(showtimesApi);
       const json = await data.json();
+      console.log("yuuuuuu",json.data)
       setTickets(json.data);
     } catch (error) {
       console.error("Error fetching showtimes:", error);
@@ -141,30 +145,31 @@ const BookingPage = () => {
   {tickets.length > 0 ? (
     tickets.map((ticket, index) => (
       <div
-        key={ticket?.SessionId || index}
-        className="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 transition-all duration-300 hover:scale-105"
-      >
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          {/* Cinema Details */}
-          <div className="w-full md:w-2/3">
-            <h3 className="text-2xl font-semibold text-red-500">{ticket?.Screens[0]?.ShowTimes[0]?.CinemaName}</h3>
-            <p className="text-gray-300 mt-1">{ticket?.Screens[0]?.ShowTimes[0]?.cinema_address}</p>
-            <p className="text-gray-400 mt-2"><strong>Seats Available:</strong> {ticket?.Screens[0]?.ShowTimes[0]?.SeatsAvailable}</p>
-            <p className="text-gray-400 mt-1"><strong>Showtime:</strong> {formatShowTime(ticket?.Screens[0]?.ShowTimes[0]?.Showtime)}</p>
-          </div>
-
-          {/* Book Now Button */}
-          <div className="w-full md:w-1/3 flex justify-center mt-4 md:mt-0">
-          <button
-  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full"
-  onClick={() => ticketHandle(ticket?.Screens[0]?.ShowTimes[0]?.SessionId)}
+      key={ticket?.SessionId || index}
+      className="bg-gray-800 bg-opacity-75 backdrop-blur-md p-6 rounded-xl shadow-xl mb-6 transition-all duration-300 hover:scale-105 border border-gray-700"
+    >
+      <div className="flex flex-col md:flex-row justify-between items-center">
+        {/* Cinema Details */}
+        <div className="w-full md:w-2/3">
+          <h3 className="text-2xl font-bold text-red-500">{ticket?.Screens[0]?.ShowTimes[0]?.CinemaName}</h3>
+          <p className="text-gray-300 mt-1 flex items-center gap-2">📍 {ticket?.Screens[0]?.ShowTimes[0]?.cinema_address}</p>
+          <p className="text-gray-400 mt-2 flex items-center gap-2">🪑 <strong>Seats Available:</strong> {ticket?.Screens[0]?.ShowTimes[0]?.SeatsAvailable}</p>
+          <p className="text-gray-400 mt-1 flex items-center gap-2">⏰ <strong>Showtime:</strong> {formatShowTime(ticket?.Screens[0]?.ShowTimes[0]?.Showtime)}</p>
+        </div>
+    
+        {console.log(ticket?.Screens[0]?.ShowTimes[0]?.CinemaName,"yoyo")}
+        <div className="w-full md:w-1/3 flex justify-center mt-4 md:mt-0">
+        <button
+  className="bg-gradient-to-r from-red-600 to-red-400 hover:from-red-700 hover:to-red-500 text-white px-5 py-3 rounded-lg w-full font-semibold text-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
+  onClick={() => ticketHandle(ticket?.Screens[0]?.ShowTimes[0]?.SessionId, ticket?.Screens[0]?.ShowTimes[0]?.CinemaId)}
 >
-  Book Now
+  🎟️ Book Now
 </button>
 
-          </div>
         </div>
       </div>
+    </div>
+    
     ))
   ) : (
     <p className="text-gray-400 text-center text-lg">No showtimes available for today.</p>

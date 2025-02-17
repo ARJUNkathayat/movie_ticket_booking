@@ -18,6 +18,7 @@ const FirstContainer = () => {
 
   return (
     <div className="bg-purple-400 h-[24rem]">
+   
       <h1>Now Playing Movies</h1>
       <ul>
         {movies.map((movie) => (
