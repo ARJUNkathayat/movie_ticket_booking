@@ -63,15 +63,14 @@ const BookingPage = () => {
     }
   };
 
-  // Fetch data when component mounts
   useEffect(() => {
     fetchMovieDetails();
-  }, [movieId]);
-
-  // Fetch showtimes when selected date changes
+  }, [movieId, fetchMovieDetails]);  // Added fetchMovieDetails as a dependency
+  
   useEffect(() => {
     fetchTheaterDetails(selectedDate);
-  }, [movieId, selectedDate]);
+  }, [movieId, selectedDate, fetchTheaterDetails]);  // Added fetchTheaterDetails as a dependency
+  
 
   if (loading) {
     return <div className="text-white text-center mt-10">Loading...</div>;

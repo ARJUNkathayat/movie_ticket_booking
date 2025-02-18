@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 
 const TicketDetail = () => {
   const { movieId, sessionId, CinemaId } = useParams();
   const [seatAreas, setSeatAreas] = useState([]);
 
-  const fetchSeatDetails = async () => {
+  const fetchSeatDetails = useCallback(async () => {
     try {
       const response = await fetch(
         `https://api_new.cinepolisindia.com/api/booking/seat-layout/${sessionId}/${CinemaId}`
@@ -26,11 +26,11 @@ const TicketDetail = () => {
     } catch (error) {
       console.error("Fetch Error:", error.message);
     }
-  };
+  }, [sessionId, CinemaId]); // Added dependencies here
 
   useEffect(() => {
     fetchSeatDetails();
-  }, [sessionId, CinemaId]);
+  }, [fetchSeatDetails]); // Now it will use the memoized function
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-gray-100 shadow-md rounded-lg mt-10">
