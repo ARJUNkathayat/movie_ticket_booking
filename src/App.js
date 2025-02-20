@@ -7,7 +7,7 @@ import TicketDetail from "./Components/TicketDetail";
 
 function App() {
   async function getData() {
-    const response = await fetch("http://localhost:5000/movies"); // Fetch from backend
+    const response = await fetch("http://localhost:5000/movies"); // Fetch from backend the data
     const json = await response.json();
     console.log(json);
   }
