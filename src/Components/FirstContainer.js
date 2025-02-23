@@ -13,29 +13,19 @@ const FirstContainer = () => {
       .catch((error) => console.error("❌ Error fetching movies:", error));
   }, []);
 
-
-  
-
   return (
-    <div className="bg-purple-400 h-[24rem]">
-   
-      <h1>Now Playing Movies</h1>
-      <ul>
-        {movies.map((movie) => (
-          <li key={movie.ID}>
-            <img
-              src={movie.FilmNameUrl}
-              alt={movie.Title}
-              width="100"
-              onError={(e) => (e.target.src = "https://via.placeholder.com/100")}
-            />
-            <h3>{movie.Title}</h3>
-            <p>Rating: {movie.rating}</p>
-            <p>Language: {movie.commmonLangaugesJoined}</p>
-            <p>Runtime: {movie.RunTime} min</p>
-          </li>
-        ))}
-      </ul>
+    <div className="bg-purple-400 h-[24rem] flex justify-center items-center">
+     <iframe
+  width="100%"
+  height="100%"
+  src="https://www.youtube.com/embed/77vRyWNqZjM?si=UX-QN4lGEuoOmaz9&autoplay=1"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
+
     </div>
   );
 };
