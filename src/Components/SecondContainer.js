@@ -51,7 +51,7 @@ const SecondContainer = () => {
   }
 
   return (
-    <div className="bg-gray-900 min-h-screen p-10">
+    <div className="bg-[#121212] min-h-screen p-10">
       <h1 className="text-white text-3xl font-bold text-center mb-6">
         🎬 Now Playing
       </h1>

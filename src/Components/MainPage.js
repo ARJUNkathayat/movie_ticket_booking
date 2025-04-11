@@ -3,6 +3,7 @@ import Header from "./Header";
 import FirstContainer from "./FirstContainer";
 import SecondContainer from "./SecondContainer";
 import LoginPage from "./LoginPage";
+import Footer from "./Footer";
 
 const MainPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,6 +17,7 @@ const MainPage = () => {
           <Header />
           <FirstContainer />
           <SecondContainer />
+          <Footer/>
         </>
       )}
     </div>
