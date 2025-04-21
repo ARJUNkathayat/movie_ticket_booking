@@ -7,12 +7,12 @@ const TicketDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedArea, setSelectedArea] = useState(null);
-  const [bookingConfirmed, setBookingConfirmed] = useState(false);
-  const [ticketCount, setTicketCount] = useState(1);
-
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const navigate = useNavigate();
 
@@ -40,115 +40,168 @@ const TicketDetail = () => {
     fetchSeatDetails();
   }, [fetchSeatDetails]);
 
+  const toggleSeat = (seat, rowName, area) => {
+    if (seat.Status !== 0) return;
+
+    const seatId = `${rowName}${seat.Position.ColumnIndex}`;
+    const isAlreadySelected = selectedSeats.includes(seatId);
+
+    setSelectedSeats((prev) =>
+      isAlreadySelected ? prev.filter((s) => s !== seatId) : [...prev, seatId]
+    );
+
+    setSelectedArea(area); // to show selected seat type
+  };
+
+  const handleBooking = async (e) => {
+    e.preventDefault();
+
+    if (!name || !phone || !email) {
+      setMessage({ type: "error", text: "Please fill in all fields." });
+      return;
+    }
+
+    const bookingData = {
+      name,
+      phone,
+      email,
+      seatType: selectedArea?.Description || "Standard",
+      tickets: selectedSeats.length,
+      seats: selectedSeats,
+      totalPrice: selectedSeats.length * (selectedArea?.Price || 150),
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (res.ok) {
+        setMessage({ type: "success", text: "🎉 Booking Confirmed!" });
+        setTimeout(() => {
+          navigate("/confirmation", { state: bookingData });
+        }, 1500);
+      } else {
+        setMessage({ type: "error", text: "Booking failed. Please try again." });
+      }
+    } catch (err) {
+      setMessage({ type: "error", text: "Server error. Try again later." });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 flex flex-col items-center">
-      <div className="max-w-5xl w-full bg-white/5 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/10 transition-all duration-300">
-        <h1 className="text-4xl font-extrabold text-center mb-8 text-blue-400 animate-fade-in">
+    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 flex flex-col items-center">
+      <div className="w-full max-w-5xl bg-white/5 p-6 rounded-xl shadow-xl border border-white/10">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-6 text-blue-400">
           🎟️ Ticket Details
         </h1>
 
-        <div className="bg-white/10 p-6 rounded-xl mb-6 text-lg space-y-2">
-          <p><span className="font-semibold text-green-400">🎬 Movie ID:</span> {movieId}</p>
-          <p><span className="font-semibold text-green-400">🕒 Session ID:</span> {sessionId}</p>
-          <p><span className="font-semibold text-green-400">🏛️ Cinema ID:</span> {CinemaId}</p>
+        {message.text && (
+          <div
+            className={`mb-4 text-center px-4 py-2 rounded ${
+              message.type === "success"
+                ? "bg-green-700 text-white"
+                : "bg-red-600 text-white"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        <div className="bg-gray-800 p-4 sm:p-6 rounded-lg mb-6">
+          <p><strong>🎬 Movie ID:</strong> {movieId}</p>
+          <p><strong>🕒 Session ID:</strong> {sessionId}</p>
+          <p><strong>🏛️ Cinema ID:</strong> {CinemaId}</p>
         </div>
 
         {loading ? (
-          <p className="text-yellow-300 text-center text-lg animate-pulse">⏳ Loading seat layout...</p>
+          <p className="text-yellow-300 text-center">⏳ Loading seat layout...</p>
         ) : error ? (
-          <p className="text-red-400 text-center text-lg">❌ {error}</p>
+          <p className="text-red-400 text-center">❌ {error}</p>
         ) : seatAreas.length > 0 ? (
-          <div className="overflow-x-auto">
-            <h2 className="text-2xl font-bold mb-4 text-green-300">🎭 Seat Layout</h2>
-            <table className="w-full text-sm bg-white/5 rounded-lg overflow-hidden shadow-lg">
-              <thead className="bg-blue-900 text-white uppercase">
-                <tr>
-                  <th className="py-3 px-4">Area</th>
-                  <th className="py-3 px-4">Seats</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Quantity</th>
-                  <th className="py-3 px-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {seatAreas.map((area, index) => {
-                  const totalPrice = ((area.PriceInCents || 0) + (area.TaxInCents || 0)) / 100;
-                  return (
-                    <tr
-                      key={index}
-                      className={`text-center ${
-                        index % 2 === 0 ? "bg-gray-800/40" : "bg-gray-700/30"
-                      } hover:bg-gray-700/50 transition`}
-                    >
-                      <td className="py-3 px-4">{area.Description}</td>
-                      <td className="py-3 px-4">{area.NumberOfSeats}</td>
-                      <td className="py-3 px-4 text-green-300 font-semibold">₹{totalPrice.toFixed(2)}</td>
-                      <td className="py-3 px-4">
-                        <select
-                          onChange={(e) => setTicketCount(Number(e.target.value))}
-                          className="bg-gray-900 border border-white/20 rounded px-2 py-1 text-white"
-                        >
-                          {[...Array(10)].map((_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() => {
-                            setSelectedArea(area);
-                            setBookingConfirmed(true);
-                          }}
-                          className="bg-green-600 hover:bg-green-700 text-white py-1 px-4 rounded-full transition"
-                        >
-                          Book
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-10">
+            {seatAreas.map((area, areaIndex) => (
+              <div
+                key={areaIndex}
+                className="border border-white/10 p-4 rounded-xl bg-gray-800"
+              >
+                <h3 className="text-xl font-bold text-blue-300 mb-2 flex items-center justify-between">
+                  🎭 {area.Description}
+                  <span className="text-green-400 text-sm">₹{area.Price}</span>
+                </h3>
+
+                <div className="flex flex-col gap-2">
+                  {area.Rows?.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
+                      <span className="w-6">{row.PhysicalName}</span>
+                      <div className="flex gap-1 flex-wrap">
+                        {row.Seats.map((seat, seatIndex) => {
+                          const seatId = `${row.PhysicalName}${seat.Position.ColumnIndex}`;
+                          const isSelected = selectedSeats.includes(seatId);
+                          const isBooked = seat.Status !== 0;
+
+                          return (
+                            <button
+                              key={seatIndex}
+                              title={isBooked ? "Booked" : isSelected ? "Selected" : "Available"}
+                              onClick={() => toggleSeat(seat, row.PhysicalName, area)}
+                              disabled={isBooked}
+                              className={`w-12 h-8 rounded-md font-bold text-xs transition-all transform
+                                ${
+                                  isBooked
+                                    ? "bg-gray-600 cursor-not-allowed"
+                                    : isSelected
+                                    ? "bg-yellow-400 text-black scale-110 ring-2 ring-yellow-300"
+                                    : "bg-green-700 hover:bg-green-500"
+                                }
+                              `}
+                            >
+                              {seat.Position.ColumnIndex}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-4 flex gap-4 text-sm text-white items-center">
+                  <div className="flex items-center gap-1">
+                    <div className="w-5 h-3 bg-green-700 rounded-sm border border-white/10"></div>
+                    Available
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-5 h-3 bg-yellow-400 rounded-sm border border-yellow-300"></div>
+                    Selected
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-5 h-3 bg-gray-600 rounded-sm border border-white/10"></div>
+                    Booked
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-red-400 mt-6 text-center">❌ No seat layout available.</p>
         )}
 
-        {bookingConfirmed && selectedArea && (
-          <div className="mt-10 bg-green-900/80 p-6 rounded-xl shadow-lg text-white w-full max-w-xl mx-auto animate-slide-up">
+        {selectedSeats.length > 0 && (
+          <div className="mt-10 bg-green-900/80 p-6 rounded-lg text-white w-full max-w-xl mx-auto">
             <h2 className="text-2xl font-bold mb-4 text-green-300">🎉 Booking Summary</h2>
-            <p className="mb-2">🎫 <strong>{ticketCount}</strong> ticket(s) in <strong>{selectedArea.Description}</strong></p>
-            <p className="mb-4">💰 Total: ₹{(((selectedArea.PriceInCents + selectedArea.TaxInCents) / 100) * ticketCount).toFixed(2)}</p>
+            <p className="mb-2">🎫 <strong>{selectedSeats.length}</strong> ticket(s) selected</p>
+            <p className="mb-2">🪑 Seats: {selectedSeats.join(", ")}</p>
+            <p className="mb-4">💰 Total: ₹{(selectedSeats.length * (selectedArea?.Price || 150)).toFixed(2)}</p>
 
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const bookingData = {
-                  name,
-                  phone,
-                  email,
-                  seatType: selectedArea.Description,
-                  tickets: ticketCount,
-                };
-
-                const res = await fetch("http://localhost:5000/api/bookings", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(bookingData),
-                });
-
-                if (res.ok) {
-                  navigate("/confirmation", { state: bookingData });
-                } else {
-                  alert("Booking failed");
-                }
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleBooking} className="space-y-4">
               <input
                 type="text"
                 placeholder="👤 Full Name"
                 required
+                value={name}
                 className="w-full p-3 rounded bg-gray-800 text-white"
                 onChange={(e) => setName(e.target.value)}
               />
@@ -156,6 +209,7 @@ const TicketDetail = () => {
                 type="text"
                 placeholder="📞 Phone Number"
                 required
+                value={phone}
                 className="w-full p-3 rounded bg-gray-800 text-white"
                 onChange={(e) => setPhone(e.target.value)}
               />
@@ -163,6 +217,7 @@ const TicketDetail = () => {
                 type="email"
                 placeholder="📧 Email"
                 required
+                value={email}
                 className="w-full p-3 rounded bg-gray-800 text-white"
                 onChange={(e) => setEmail(e.target.value)}
               />
